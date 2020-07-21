@@ -180,6 +180,7 @@ defmodule BroadwayKafka.Producer do
           receive_timer: nil,
           receive_interval: config.receive_interval,
           reconnect_timeout: config.reconnect_timeout,
+          callback_module: config.callback_module,
           acks: Acknowledger.new(),
           config: config,
           allocator_names: allocator_names(opts[:broadway]),
@@ -357,6 +358,10 @@ defmodule BroadwayKafka.Producer do
 
   @impl Producer
   def prepare_for_draining(state) do
+    unless is_nil(state.callback_module) do
+      state.callback_module.on_drain(state)
+    end
+
     # On draining, we will continue scheduling the polls, but they will be a no-op.
     {:noreply, [], %{state | shutting_down?: true}}
   end
