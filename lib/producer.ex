@@ -218,6 +218,10 @@ defmodule BroadwayKafka.Producer do
 
   @impl GenStage
   def handle_call(:drain_after_revoke, _from, %{group_coordinator: nil} = state) do
+    unless is_nil(state.callback_module) do
+      state.callback_module.on_drain(state)
+    end
+
     {:reply, :ok, [], state}
   end
 
@@ -226,6 +230,9 @@ defmodule BroadwayKafka.Producer do
     state = reset_buffer(state)
 
     if Acknowledger.all_drained?(state.acks) do
+      unless is_nil(state.callback_module) do
+        state.callback_module.on_drain(state)
+      end
       {:reply, :ok, [], %{state | acks: Acknowledger.new()}}
     else
       {:noreply, [], %{state | revoke_caller: from}}
