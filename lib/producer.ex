@@ -366,6 +366,8 @@ defmodule BroadwayKafka.Producer do
 
   @impl Producer
   def prepare_for_draining(state) do
+    send(state.group_coordinator, :prepare_shutdown)
+
     unless is_nil(state.callback_module) do
       state.callback_module.on_drain(state)
     end
